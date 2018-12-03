@@ -48,16 +48,9 @@ def __main__():
                     claims[-1].free = False
                     claims[puzzle[x][y] - 1].free = False
 
-    count = 0
-    for i in puzzle:
-        for j in i:
-            if j > 1:
-                count += 1
     for claim in claims:
         if claim.free == True:
             print("Claim id: {}".format(claim.id))
-
-    print("Total count: {}".format(count))
 
 __main__()
 
