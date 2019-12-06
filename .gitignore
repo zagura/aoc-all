@@ -1,0 +1,7 @@
+*.elf
+*.swp
+*.pyc
+*.txt
+*.in
+*.user
+.idea/
