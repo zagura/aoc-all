@@ -19,6 +19,7 @@
 #include <string>
 #include <array>
 #include <algorithm>
+#include <cmath>
 
 using std::getline;
 using std::istringstream;
@@ -93,7 +94,7 @@ vector<Point> read_map() {
     return asteroid_map;
 }
 
-pair<Point,int> get_best(vector<Point>& asteroid_map) {
+pair<Point,int> get_best(vector<Point>& asteroid_map, vector<Point>& best_detect) {
     Point best(0,0);
     int max_sight = 0;
     for (Point& asteroid: asteroid_map) {
@@ -119,22 +120,83 @@ pair<Point,int> get_best(vector<Point>& asteroid_map) {
         if (current_sight > max_sight) {
             max_sight = current_sight;
             best = asteroid;
-//            best.print();
-//            cout << endl;
-//            for (auto& t: targets) {
-//                cout <<  "  ";
-//                t.print();
-//                cout << endl;
-//            }
+            best_detect = targets;
         }
     }
     return make_pair(best, max_sight);
 }
 
+int get_200(vector<Point>& detected, Point& station) {
+    vector<pair<Point, long double>> angles;
+    for (Point& p: detected) {
+        Point base (0, -1);
+        Point vec (p.x - station.x, p.y - station.y);
+        long double cos = static_cast<long double>(scalar_mul(base, vec)) /
+                static_cast<long double>(sqrtl(base.size()) * sqrtl(vec.size()));
+        if (mul(base, vec) < 0) { cos = -3 - cos; };
+        angles.emplace_back(p, cos);
+    }
+    std::sort(detected.begin(), detected.end(), [&station](Point& left, Point& right) {
+        Point base (0, -1);
+        Point vec1 (left.x - station.x, left.y - station.y);
+        Point vec2 (right.x - station.x, right.y - station.y);
+        long double cos1 = static_cast<long double>(scalar_mul(base, vec1))
+                / static_cast<long double>((sqrtl(base.size()) * sqrtl(vec1.size())));
+        long double cos2 = static_cast<long double>(scalar_mul(base, vec2))
+                / static_cast<long double>((sqrtl(base.size()) * sqrtl(vec2.size())));
+        if (mul(base, vec1) < 0) { cos1 = - 3 - cos1; }
+        if (mul(base, vec2) < 0) { cos2 = - 3 - cos2; }
+        return cos1 > cos2;
+    });
+    std::sort(angles.begin(), angles.end(), [](auto& left, auto& right) {
+        return left.second > right.second;
+    });
+    int i = 0;
+    for (auto& angle: angles) {
+        cout << ++i << "  ";
+        angle.first.print();
+        if (angle.first != detected[i-1]) {
+            cout << " Difference ";
+        }
+        cout << " :  " << angle.second;
+        cout << endl;
+    }
+//    Point p = detected.at(199);
+    Point p = detected.front();
+    return p.x * 100 + p.y;
+}
+
+void print_map(vector<Point> asteroid_map, Point& station) {
+    int max_x, max_y;
+    for (Point& p: asteroid_map) {
+        if (p.x > max_x) {
+            max_x = p.x;
+        }
+        if (p.y > max_y) {
+            max_y = p.y;
+        }
+    }
+    vector<vector<char>> output_map(max_y + 1, vector<char>(max_x + 1, ' '));
+    for (Point& p: asteroid_map) {
+        output_map[p.y][p.x] = '1';
+    }
+    output_map[station.y][station.x] = '8';
+    for (auto& vec: output_map) {
+        for (auto& c: vec) {
+            cout << c;
+        }
+        cout << endl;
+    }
+    cout << endl << endl;
+}
 
 int main() {
     vector<Point> asteroid_map = read_map();
-    auto best = get_best(asteroid_map);
+    vector<Point> detected;
+    auto best = get_best(asteroid_map, detected);
     cout << "Part 1: " << best.second << endl;
+    int result = get_200(detected, best.first);
+    print_map(detected, best.first);
+//    cout << "Part 2: " << get_200(detected, best.first) << endl;
     return 0;
 }
