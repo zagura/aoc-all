@@ -3,210 +3,245 @@
  *
  *       Filename:  task1.cpp
  *
- *    Description:
+ *    Description:  
  *
  *        Version:  1.0
- *        Created:  02.12.2019 21:22:50
+ *        Created:  11.12.2019 22:31:51
  *
  *         Author:  Michał Zagórski (zagura), <mzagorsk@student.agh.edu.pl>
  *   Organization:  AGH University of Science and Technology, Kraków
  *
  * =====================================================================================
  */
+
 #include <iostream>
-#include <sstream>
-#include <vector>
 #include <string>
+#include <vector>
+#include <map>
+#include <algorithm>
+#include <cinttypes>
+#include <sstream>
+#include <functional>
+#include <iterator>
+using namespace std;
 
-using std::getline;
-using std::istringstream;
-using std::stringstream;
-using std::string;
-using std::vector;
-using std::cin;
-using std::cout;
-using std::endl;
+enum class AccessMode: uint8_t {
+    kPositionMode = 0,
+    kImmediateMode = 1,
+    kRelativeMode = 2
+};
 
-// modes
-// 0 - position mode
-// 1 - immediate mode
+enum class Opcode: uint8_t {
+    kAdd            = 1,
+    kMultiply       = 2,
+    kLoad           = 3,
+    kStore          = 4,
+    kJumpIfTrue     = 5,
+    kJumpIfFalse    = 6,
+    kLessThan       = 7,
+    kEquals         = 8,
+    kAdjustRelative = 9,
+    kHalt           = 99
+};
 
-void add(vector<int>& vals, int begin_index, int modes) {
-    int mode1 = modes % 10;
-    int mode2 = (modes / 10) % 10;
-    int val1 = vals.at(begin_index + 1);
-    int val2 = vals.at(begin_index + 2);
-    int val3 = vals.at(begin_index + 3);
-    if (not mode1) {
-        val1 = vals.at(val1);
+
+using reg_type = long long int;
+
+class Processor {
+public:
+    vector<reg_type> state;
+    size_t relative_base;
+    size_t ip; // instruction pointer
+    bool done;
+    reg_type access_resize(reg_type index);
+    reg_type get_param(AccessMode mode, reg_type index);
+    reg_type get_param_address(AccessMode mode, reg_type index);
+    reg_type get_param_address2(AccessMode mode, reg_type index);
+    void resize(reg_type index);
+    void add(AccessMode modes[]);
+    void multiply(AccessMode modes[]);
+    void load(AccessMode modes[]);
+    void store(AccessMode modes[]);
+    void jump_if_true(AccessMode modes[]);
+    void jump_if_false(AccessMode modes[]);
+    void less_than(AccessMode modes[]);
+    void equals(AccessMode modes[]);
+    void adjust_relative(AccessMode modes[]);
+    void halt(AccessMode modes[]);
+};
+
+void Processor::resize(reg_type index) {
+    size_t new_size = static_cast<size_t>(index + 1);
+    if (new_size > state.size()) {
+        state.resize(new_size);
     }
-    if (not mode2) {
-        val2 = vals.at(val2);
-    }
-    int result = val1 + val2;
-    vals[val3] = result;
+}
+reg_type Processor::access_resize(reg_type index) {
+    resize(index);
+    return state.at(index);
 }
 
-void multiply(vector<int>& vals, int begin_index, int modes) {
-    int mode1 = modes % 10;
-    int mode2 = (modes / 10) % 10;
-    int val1 = vals.at(begin_index + 1);
-    int val2 = vals.at(begin_index + 2);
-    int val3 = vals.at(begin_index + 3);
-    if (not mode1) {
-        val1 = vals.at(val1);
+
+reg_type Processor::get_param(AccessMode mode, reg_type index) {
+    reg_type param = access_resize(index);
+    switch(mode) {
+        case AccessMode::kImmediateMode:
+            break;
+        case AccessMode::kRelativeMode:
+            param += relative_base;
+            [[fallthrough]];
+        case AccessMode::kPositionMode:
+            param = access_resize(param);
     }
-    if (not mode2) {
-        val2 = vals.at(val2);
-    }
-    int result = val1 * val2;
-    vals[val3] = result;
+//    resize(param);
+    return param;
 }
 
-void less_than(vector<int>& vals, int i, int modes) {
-    int mode1 = modes % 10;
-    int mode2 = (modes / 10) % 10;
-    int mode3 = (modes / 100) % 10;
-    int v1, v2, v3;
-    v1 = vals.at(i+1);
-    v2 = vals.at(i+2);
-    v3 = vals.at(i+3);
-    if (not mode1) {
-        v1 = vals.at(v1);
+reg_type Processor::get_param_address(AccessMode mode, reg_type index) {
+    reg_type param = access_resize(index);
+    if (AccessMode::kRelativeMode == mode) {
+            param += relative_base;
     }
-    if (not mode2) {
-        v2 = vals.at(v2);
+    resize(param);
+    return param;
+}
+
+reg_type Processor::get_param_address2(AccessMode mode, reg_type index) {
+    if (AccessMode::kRelativeMode == mode) {
+            index += relative_base;
     }
-//    if (not mode3) {
-//        v3 = vals.at(v3);
-//    }
-    if (v1 < v2) {
-        vals[v3] = 1;
+    reg_type param = access_resize(index);
+    resize(param);
+    return param;
+}
+
+void Processor::add(AccessMode modes[]) {
+    reg_type param1 = get_param(modes[0], ip + 1);
+    reg_type param2 = get_param(modes[1], ip + 2);
+    reg_type result_addr = get_param_address(modes[2], ip + 1);
+    reg_type result = param1 + param2;
+    state.at(result_addr) = result;
+    ip += 4;
+}
+
+void Processor::multiply(AccessMode modes[]) {
+    reg_type param1 = get_param(modes[0], ip + 1);
+    reg_type param2 = get_param(modes[1], ip + 2);
+    reg_type result_addr = get_param_address(modes[2], ip + 3);
+    reg_type result = param1 * param2;
+    state.at(result_addr) = result;
+    ip += 4;
+}
+
+void Processor::load(AccessMode modes[])
+{
+    reg_type address = get_param_address2(modes[0], ip + 1);
+    reg_type value = 0;
+    cout << "Please give a value: ";
+    cin >> value;
+    state.at(address) = value;
+    ip += 2;
+}
+
+void Processor::store(AccessMode modes[])
+{
+    reg_type printed_address = get_param(modes[0], ip + 1);
+    cout << printed_address << " ";
+    ip += 2;
+}
+
+void Processor::jump_if_true(AccessMode modes[])
+{
+    reg_type param1 = get_param(modes[0], ip + 1);
+    reg_type param2 = get_param(modes[1], ip + 2);
+    if (param1 != 0) {
+        ip = param2;
     } else {
-        vals[v3] = 0;
+        ip += 3;
     }
 }
 
-void equal(vector<int>& vals, int i, int modes) {
-    int mode1 = modes % 10;
-    int mode2 = (modes / 10) % 10;
-    int mode3 = (modes / 100) % 10;
-    int v1, v2, v3;
-    v1 = vals.at(i+1);
-    v2 = vals.at(i+2);
-    v3 = vals.at(i+3);
-    if (not mode1) {
-        v1 = vals.at(v1);
-    }
-    if (not mode2) {
-        v2 = vals.at(v2);
-    }
-//    if (not mode3) {
-//        v3 = vals.at(v3);
-//    }
-    if (v1 == v2) {
-        vals[v3] = 1;
+void Processor::jump_if_false(AccessMode modes[])
+{
+    reg_type param1 = get_param(modes[0], ip + 1);
+    reg_type param2 = get_param(modes[1], ip + 2);
+    if (param1 == 0) {
+        ip = param2;
     } else {
-        vals[v3] = 0;
+        ip += 3;
     }
+}
+
+void Processor::less_than(AccessMode modes[])
+{
+    reg_type param1 = get_param(modes[0], ip + 1);
+    reg_type param2 = get_param(modes[1], ip + 2);
+    reg_type param3 = get_param_address(modes[2], ip + 3);
+    state.at(param3) = (param1 < param2) ? 1 : 0;
+    ip += 4;
+}
+
+void Processor::equals(AccessMode modes[])
+{
+    reg_type param1 = get_param(modes[0], ip + 1);
+    reg_type param2 = get_param(modes[1], ip + 2);
+    reg_type param3 = get_param_address(modes[2], ip + 3);
+    state.at(param3) = (param1 == param2) ? 1 : 0;
+    ip += 4;
+}
+
+void Processor::adjust_relative(AccessMode modes[])
+{
+    reg_type param1 = get_param(modes[0], ip + 1);
+    relative_base += param1;
+    ip += 2;
+}
+
+void Processor::halt(AccessMode modes[])
+{
+    static_cast<void>(modes);
+    done = true;
+    ip = state.size() + 1;
 }
 
 int main() {
-    std::vector<int> vals;
-    vals.reserve(200);
-    std::string line;
-    getline(std::cin, line);
-    stringstream ss { line };
-    for (std::string number; getline(ss, number, ',');) {
-        vals.push_back(std::stoi(number));
+    string program;
+    getline(std::cin, program);
+    stringstream ss { program };
+    vector<reg_type> code;
+    code.reserve(program.size());
+    for(string instruction; getline(ss, instruction, ',');) {
+        code.push_back(stoll(instruction));
     }
-    for (size_t i = 0; i < vals.size();) {
-        int v1 = 0;
-        int v2 = 0;
-        int v3 = 0;
-        int mode;
-        int mode1, mode2;
-        int instruction = vals[i] % 100;
-        cout << "Element i " << i << endl;
-        mode = vals[i] / 100;
-        switch(instruction) {
-        case 1:
-            add(vals, i, mode);
-            i += 4;
-            break;
-        case 2:
-            multiply(vals, i, mode);
-            i += 4;
-            break;
-        case 3:
-            v1 = vals.at(i+1);
-            cout << "Get: " << endl;
-            std::cin >> v2;
-            vals[v1] = v2;
-            i += 2;
-            break;
-        case 4:
-            v1 = vals.at(i+1);
-            cout << "Output: " << vals[v1] << endl;
-            i += 2;
-            break;
-        case 5:
-            v1 = vals.at(i+1);
-            v2 = vals.at(i+2);
-            mode1 = mode % 10;
-            mode2 = (mode / 10) % 10;
-            if (not mode1) {
-                v1 = vals.at(v1);
-            }
-            if (not mode2) {
-                v2 = vals.at(v2);
-            }
-            if (v1 != 0) {
-                i = v2;
-            } else {
-                i+= 3;
-            }
-            break;
-        case 6:
-            v1 = vals.at(i+1);
-            v2 = vals.at(i+2);
-            mode1 = mode % 10;
-            mode2 = (mode / 10) % 10;
-            if (not mode1) {
-                v1 = vals.at(v1);
-            }
-            if (not mode2) {
-                v2 = vals.at(v2);
-            }
-            if (v1 == 0) {
-                i = v2;
-            } else {
-                i+= 3;
-            }
-            break;
-        case 7:
-            less_than(vals, i, mode);
-            i += 4;
-            break;
-        case 8:
-            equal(vals, i, mode);
-            i += 4;
-            break;
-        case 99:
-            std::cout << "End of program" << std::endl;
-            i = vals.size() + 1;
-            break;
-        default:
-            cout << "Problem: " << i << '[' << vals[i] << ']' << endl;
-            i = vals.size();
+    Processor processor;
+    /*map<int, function<void, AccessMode[]>>*/
+    map<Opcode, function<void(AccessMode[])>> opcodes = {
+        { Opcode::kAdd, bind(&Processor::add, &processor, placeholders::_1) },
+        { Opcode::kMultiply, bind(&Processor::multiply, &processor, placeholders::_1) },
+        { Opcode::kLoad, bind(&Processor::load, &processor, placeholders::_1) },
+        { Opcode::kStore, bind(&Processor::store, &processor, placeholders::_1) },
+        { Opcode::kJumpIfTrue, bind(&Processor::jump_if_true, &processor, placeholders::_1) },
+        { Opcode::kJumpIfFalse, bind(&Processor::jump_if_false, &processor, placeholders::_1) },
+        { Opcode::kLessThan, bind(&Processor::less_than, &processor, placeholders::_1) },
+        { Opcode::kEquals, bind(&Processor::equals, &processor, placeholders::_1) },
+        { Opcode::kAdjustRelative, bind(&Processor::adjust_relative, &processor, placeholders::_1) },
+        { Opcode::kHalt, bind(&Processor::halt, &processor, placeholders::_1)}
+    };
+    processor.state.reserve(code.size());
+    std::copy(code.begin(), code.end(), back_inserter(processor.state));
+    processor.ip = 0;
+    processor.done = false;
+    while (not processor.done) {
+        reg_type instruction = processor.state.at(processor.ip);
+        int mode = instruction / 100;
+        Opcode opcode = static_cast<Opcode>(instruction % 100);
+        AccessMode modes[3];
+        for (int i = 0; i < 3; i++) {
+            modes[i] = static_cast<AccessMode>(mode % 10);
+            mode /= 10;
         }
-    }
-
-    for (auto& v: vals) {
-        cout << v << ",";
+        opcodes.at(opcode)(modes);
     }
     cout << endl;
-
-
     return 0;
 }
