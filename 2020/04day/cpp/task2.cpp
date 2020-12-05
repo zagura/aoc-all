@@ -1,0 +1,185 @@
+/*
+ * =====================================================================================
+ *
+ *       Filename:  task1.cpp
+ *
+ *    Description:i Day 4 Advent of Code 2020
+ *
+ *        Version:  0.1.0
+ *        Created:  04.12.2020
+ *
+ *         Author:  Michał Zagórski (zagura), <zagura6@gmail.com>
+ *
+ * =====================================================================================
+ */
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <map>
+#include <set>
+using std::string;
+using std::vector;
+
+struct doc {
+    std::map<string, string> data;
+    int field_count;
+    std::map<string, int> fields;
+    bool valid;
+};
+
+bool validate_byr(string value) {
+    int data = stoi(value);
+    return (data >= 1920 and data <= 2002);
+}
+bool validate_iyr(string val) {
+    int data = stoi(val);
+    return (data >= 2010 and data <= 2020);
+}
+
+bool validate_eyr(string val) {
+    int data = stoi(val);
+    return (data >= 2020 and data <= 2030);
+}
+
+bool validate_ecl(string val) {
+    static std::set<string> valid_colors {
+        "amb", "blu", "brn", "gry", "grn" , "hzl", "oth" };
+    return (valid_colors.find(val) != valid_colors.end());
+}
+
+bool validate_pid(string val) {
+    if (val.size() != 9) {
+        return false;
+    }
+    for (char d: val) {
+        if (not (d >= '0' and d <= '9')) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validate_hgt (string val) {
+    string unit = val.substr(val.size() - 2);
+    int number = std::stoi(val.substr(0, val.size() - 2));
+    if (unit == "cm") {
+        return (number >= 150 and number <= 193);
+    } else if (unit == "in") {
+        return (number >= 59 and number <= 76);
+    }
+    return false;
+}
+
+bool validate_hcl(string val) {
+    if (val.length() != 7) {
+        return false;
+    }
+    if (val[0] != '#') {
+        return false;
+    }
+    string hex_val = val.substr(1);
+    for (char c: hex_val) {
+        if (not ((c >= '0' and c <= '9') or (c >= 'a' and  c <= 'f')) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validate_field(string key, string value) {
+    try {
+    if (key == "byr") {
+        return validate_byr(value);
+    } else if (key == "iyr") {
+        return validate_iyr(value);
+    } else if (key == "eyr") {
+        return validate_eyr(value);
+    } else if (key == "hgt") {
+        return validate_hgt(value);
+    } else if (key == "hcl") {
+        return validate_hcl(value);
+    } else if (key == "ecl") {
+        return validate_ecl(value);
+    } else if (key == "pid") {
+        return validate_pid(value);
+    } else if (key == "cid") {
+        return true;
+    }
+    } catch(...) {
+
+    }
+
+    return false;
+}
+
+doc create_doc(string line) {
+    doc d {};
+    std::stringstream record_line { line };
+    bool cid_present = false;
+    for (string field; getline(record_line, field, ' ');) {
+        std::stringstream field_stream { field };
+        string key, value;
+        getline(field_stream, key, ':');
+        getline(field_stream, value);
+        if (validate_field(key, value)) {
+            d.fields[key]++;
+            if (d.fields[key] == 1) {
+                d.field_count++;
+            }
+            d.data[key] = value;
+            if (key == "cid") {
+                cid_present = true;
+            }
+        }
+        ::fprintf(stderr, "Invalid field: %s -> %s\n", key.c_str(), value.c_str());
+//        ::printf("%s -> %s ", key.c_str(), value.c_str());
+    }
+    ::printf("\n%d, %d\n", d.field_count, cid_present);
+    if ((d.field_count == 8) or (d.field_count == 7 and (not cid_present))) {
+        d.valid = true;
+    } else {
+        d.valid = false;
+    }
+    return d;
+}
+
+int main(int argc, char* argv[]) {
+    std::ifstream input { "input.in" };
+    if (argc == 2) {
+        input = std::ifstream { argv[1] };
+    }
+    std::vector<std::string> records {};
+    records.reserve(260);
+    string last = "";
+
+    for (std::string line; getline(input, line);) {
+//        ::printf("Line: %zu %s\n", line.length(), line.c_str());
+        if (line.size() == 0) {
+            // Skip empty line
+            records.push_back(last);
+            last = "";
+            continue;
+        }
+        if (last.size() > 0) {
+            last = last + ' ' + line;
+        } else {
+            last = line;
+        }
+    }
+    if (last != "") {
+        records.push_back(last);
+    }
+    int valid_docs = 0;
+    for (string record: records) {
+        doc d = create_doc(record);
+        printf("Record: %s -- %s\n", record.c_str(), d.valid ? "valid" : "invalid");
+        if (d.valid) {
+            valid_docs++;
+        }
+    }
+//    ::printf("Total: %zu\n", records.size());
+    ::printf("Task 2: %d valid docs\n", valid_docs);
+    return 0;
+}
