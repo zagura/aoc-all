@@ -11,6 +11,6 @@ foreach(DAY_NO RANGE 1 9)
     add_subdirectory("0${DAY_NO}day/cpp")
 endforeach(${DAY_NO})
 
-foreach(DAY_NO RANGE 10 10)
+foreach(DAY_NO RANGE 10 12)
     add_subdirectory("${DAY_NO}day/cpp")
 endforeach(${DAY_NO})
