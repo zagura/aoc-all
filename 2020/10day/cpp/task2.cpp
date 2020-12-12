@@ -1,24 +1,19 @@
 /*
  * =====================================================================================
  *
- *       Filename:  task1.cpp
+ *       Filename:  task2.cpp
  *
  *    Description:  Advent of Code 2020 - Day 10
  *
- *        Version:  0.1.0
- *        Created:  11.12.2020
+ *        Version:  0.1.1
+ *        Created:  10.12.2020
  *
  *         Author:  Michał Zagórski (zagura), <zagura6@gmail.com>
  *
  * =====================================================================================
  */
 #include <iostream>
-#include <string>
 #include <fstream>
-#include <map>
-#include <set>
-#include <sstream>
-#include <queue>
 #include <algorithm>
 
 
@@ -31,7 +26,6 @@ int main(int argc, char* argv[]) {
         ::fprintf(stderr, "Cannot open input file\n");
         return 2;
     }
-    int result = 0;
     int jolts {};
     std::vector<int> jolts_converters {};
     jolts_converters.reserve(1000);
@@ -49,7 +43,7 @@ int main(int argc, char* argv[]) {
     int sum_threes = 0;
     diffs.push_back(diffs.back() + 3);
     // Part 1
-    for (auto i = 1; i < diffs.size(); i++) {
+    for (size_t i = 1; i < diffs.size(); i++) {
         auto diff = diffs[i] - diffs[i-1];
         if (diff == 1) {
             sum_ones += 1;
@@ -72,7 +66,7 @@ int main(int argc, char* argv[]) {
     ::printf("Ones: %d Threes: %d\n", sum_ones, sum_threes);
     ::printf("Task 1 result: %d\n", sum_ones * sum_threes);
     // Part 2
-    ::printf("Task 2 result: %llu\n", arrangements.back());
+    ::printf("Task 2 result: %lld\n", arrangements.back());
     return 0;
 }
 

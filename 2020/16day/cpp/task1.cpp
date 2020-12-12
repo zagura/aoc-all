@@ -25,7 +25,7 @@ using std::string;
 using std::vector;
 using std::array;
 using std::map;
-using std::strinstream;
+using std::stringstream;
 
 
 

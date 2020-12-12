@@ -5,7 +5,7 @@
  *
  *    Description:  Advent of Code 2020 - Day 11
  *
- *        Version:  0.1.0
+ *        Version:  0.1.1
  *        Created:  11.12.2020
  *
  *         Author:  Michał Zagórski (zagura), <zagura6@gmail.com>
@@ -24,8 +24,8 @@
 constexpr char occupied = '#';
 constexpr char empty = 'L';
 constexpr char floor = '.';
-const std::array<std::pair<int, int>, 8> neighbours = {
-    std::make_pair(-1, -1), // upper-left
+const std::array<std::pair<int, int>, 8> neighbours = {{
+    { -1, -1 }, // upper-left
     { -1, 0 }, // up
     { -1, 1 },  // upper-right
     { 0, -1 }, // left
@@ -33,12 +33,12 @@ const std::array<std::pair<int, int>, 8> neighbours = {
     { 1, -1 },
     { 1, 0 },
     { 1, 1}
-};
+}};
 
 using std::string;
 template <class T>
 bool fits(const int& index, const T& vec) {
-    return (index >= 0 && index < vec.size());
+    return (index >= 0 && index < static_cast<int>(vec.size()));
 }
 std::vector<string> get_next(const std::vector<string>& prev_seatmap, /* inout */ bool& changed) {
     std::vector<string> seatmap = prev_seatmap;
@@ -110,7 +110,6 @@ int main(int argc, char* argv[]) {
         occupied_count += std::count_if(line.begin(), line.end(), [](char c) { return c == occupied;});
     }
 
-//    ::printf("Ones: %d Threes: %d\n", sum_ones, sum_threes);
     ::printf("Task 1 result: %zu\n", occupied_count);
     return 0;
 }
