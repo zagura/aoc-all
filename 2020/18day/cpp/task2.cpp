@@ -21,19 +21,32 @@
 #include <map>
 #include <vector>
 #include <cinttypes>
+#include <queue>
+#include <variant>
+
 
 using std::string;
 using std::vector;
 using std::array;
 using std::map;
 using std::stringstream;
+using elem = std::variant<uint64_t, char>;
+
+// helper type for the visitor #4
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+// explicit deduction guide (not needed as of C++20)
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 uint64_t math_op(char op, uint64_t left, uint64_t right, int l) {
-    printf("%d: Calculate: %" PRId64 " %c %" PRId64 "\n", l, left, op, right);
+    uint64_t result = 0;
     if (op == '+') {
-        return left +  right;
+        result = left + right;
+    } else if (op == '*') {
+        result = left * right;
     }
-    return left * right;
+//    printf("%d: Calculate: %" PRIu64 " %c %" PRIu64 " => %" PRIu64 "\n", l,
+//           left, op, right, result);
+    return result;
 }
 
 int main(int argc, char* argv[]) {
@@ -51,75 +64,77 @@ int main(int argc, char* argv[]) {
         if (line.empty()) {
             continue;
         }
-        std::vector<std::pair<std::pair<uint64_t, uint64_t>, char>> partials {};
-        uint64_t left_stack = 1;
+        std::vector<elem> operators {};
+        std::vector<elem> output {};
         std::stringstream line_stream { line };
+        operators.reserve(line.size() / 2);
+        output.reserve(line.size() / 2);
         string token;
-        char op = '+';
-        uint64_t current_result = 0;
         while (line_stream >> token) {
-            printf("Token: %s\n", token.c_str());
+//            printf("Token: %s\n", token.c_str());
             if (token.front() == '*' || token.front() == '+') {
-                op = token.front();
+                char op = token.front();
+                if (op == '*') {
+                    while ((not operators.empty()) and
+                           std::get<char>(operators.back()) == '+') {
+                        output.emplace_back('+');
+                        operators.pop_back();
+                    }
+                }
+                operators.push_back(token.front());
             } else {
-                ::printf("State: (%" PRId64 ", %" PRId64 ", %c)\n", left_stack, current_result, op);
                 if (token.front() == '(') {
                     size_t begin = 0;
                     for (;token[begin] == '('; begin++) {
-                            printf("Emplace: (%" PRId64 ", %" PRId64 ", %c)\n", left_stack, current_result, op);
-                            partials.emplace_back(std::make_pair(left_stack, current_result), op);
-                            current_result = 0;
-                            left_stack = 1;
-                            op = '+';
+                        operators.push_back(token[begin]);
                     }
-                    current_result = math_op(op, current_result, std::stoll(token.substr(begin)), __LINE__);
+                    uint64_t number = std::stoul(token.substr(begin));
+                    output.emplace_back(number);
                 } else {
                     size_t closing = token.find_first_of(')');
-                    if (op == '*') {
-                        left_stack = math_op(op, left_stack, current_result, __LINE__);
-                        op = '+';
-                        current_result = 0;
-                    }
-                    current_result = math_op(op, current_result, std::stoll(token.substr(0, closing)), __LINE__);
-//                    ::printf("State3: (%" PRId64 ", %" PRId64 ", %c)\n", left_stack, current_result, op);
-                    bool parens = (closing != std::string::npos);
-                    if (parens) {
-//                        partials.emplace_back(std::make_pair(left_stack, current_result), op);
-                        uint64_t tmp_result = current_result * left_stack;
-                        printf("Closing paren - evaluate to: %" PRId64 "\n", tmp_result);
-                        for (++closing; closing < token.size(); closing++) {
-                            printf("Closing paren\n");
-                            auto [last_results, last_op] = partials.back();
-                            ::printf("Pull partials: (%" PRId64 ", %" PRId64 ", %c)\n", last_results.first, last_results.second, last_op);
-                            partials.pop_back();
-                            tmp_result = math_op(last_op, tmp_result, last_results.second, __LINE__);
-                            tmp_result = math_op('*', tmp_result, last_results.first, __LINE__);
+                    uint64_t number = std::stoul(token.substr(0, closing));
+                    output.emplace_back(number);
+                    for (; closing < token.size(); closing++) {
+//                        printf("Closing paren\n");
+                        while (std::get<char>(operators.back()) != '(') {
+                            output.emplace_back(operators.back());
+                            operators.pop_back();
                         }
-                        current_result = tmp_result;
-                        left_stack = 1;
+                        operators.pop_back();
                     }
                 }
-                ::printf("State end: (%" PRId64 ", %" PRId64 ", %c)\n", left_stack, current_result, op);
             }
         }
-
-//        if (op == '*') {
-        uint64_t tmp_result = math_op('*', left_stack, current_result, __LINE__);
-        while (not partials.empty()) {
-            auto [last_results, last_op] = partials.back();
-            partials.pop_back();
-            tmp_result = math_op(last_op, tmp_result, last_results.second, __LINE__);
-            tmp_result = math_op('*', tmp_result, last_results.first, __LINE__);
+        std::reverse(std::begin(operators), std::end(operators));
+        for (auto& op: operators) {
+            output.emplace_back(op);
         }
-        current_result = tmp_result;
-
+//        printf("Converted expression:");
+//        for (auto& el: output) {
+//            std::visit(overloaded {
+//                           [](char c) { printf(" %c", c); },
+//                           [](uint64_t n) { printf(" %" PRIu64 "", n); }
+//                       }, el);
 //        }
-
-        printf("Line %d: %s - %" PRId64 "\n", line_no, line.c_str(), current_result);
-        result += current_result;
+//        printf("\n");
+        std::vector<uint64_t> stack {};
+        stack.reserve(output.size());
+        for (auto& el: output) {
+            std::visit(overloaded {
+                [&stack] (char c) { uint64_t res = math_op(c, stack.back(), stack.at(stack.size() - 2), __LINE__);
+                                           stack.pop_back();
+                                           stack.pop_back();
+                                           stack.push_back(res);
+                },
+                [&stack] (uint64_t n) { stack.push_back(n); }
+                       }, el);
+        }
+//        printf("Line %d: %" PRIu64 "\n", line_no, stack.front());
+        result += stack.front();
+        /// End of tokens in line
     }
 
-    ::printf("Task 2 result: %" PRId64 "\n", result);
+    ::printf("Task 2 result: %" PRIu64 "\n", result);
     return 0;
 }
 
