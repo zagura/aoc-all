@@ -3,14 +3,24 @@
  *
  *       Filename:  task1.cpp
  *
- *    Description:  Advent of Code 2020 - Day 13
+ *    Description:  Advent of Code 2020 - Day 19
  *
- *        Version:  0.1.0
- *        Created:  13.12.2020
+ *        Version:  0.2.0
+ *        Created:  19.12.2020
  *
  *         Author:  Michał Zagórski (zagura), <zagura6@gmail.com>
  *
  * =====================================================================================
+ */
+/**
+ * As I couldn't find simple solution, this program get different input for part 1 and part2,
+ * where grammar is presented in Chomsky normal form: https://en.wikipedia.org/wiki/Chomsky_normal_form
+ * Changes needed:
+ *  * part1: remove production 8 and place 0: 42 11 instead
+ *           remove production 121 and append possible outcomes to productions which use 121
+ *  * part2: replace 8: 42 into 8: 42 8 | (42 right side)
+ *           append new productions 121: 11 31 and 133: 42 11
+ *           to replace 11: 42 31 into 11: 42 31 | 42 121 | 133 11
  */
 #include <iostream>
 #include <string>
@@ -34,7 +44,7 @@ struct Production {
     bool is_terminal = false;
 };
 
-/// Recursively check if word can be produced starting from production i
+
 
 void print(const Production& p) {
     if (p.is_terminal) {
@@ -84,13 +94,46 @@ bool match(const vector<Production>& productions, int id,
     return false;
 }
 
-bool parse(string word, const vector<Production>& productions) {
-    for (size_t i = 0; i < productions.size(); i++) {
-        if (match(productions, i, 0, word.size(), word)) {
-            return true;
+// CYK algorithm: https://en.wikipedia.org/wiki/CYK_algorithm
+bool parse(string word, const vector<Production>& productions, const vector<int>& terminals) {
+    /// Prepare helper table
+    vector<vector<vector<int>>> table {};
+    table.resize(word.size());
+    for (auto& t: table) {
+        t.resize(word.size());
+    }
+    /// Put productions into first row of table
+    for (size_t i = 0; i < word.size(); i++) {
+        for (auto t: terminals) {
+            if (productions[t].terminal == word.at(i)) {
+                table[0][i].push_back(t);
+            }
         }
     }
-    return false;
+
+    for (size_t i = 1; i < word.size(); i++) { // row
+        for (size_t start = 0; start < word.size() - i; start++) {  // column
+            /// We are calucalating table[i][start] := table[i-div][start] table
+            for (size_t div = 0; div < i; div++) {
+                vector<int>& left = table[div][start];
+                vector<int>& right = table[i - div - 1][start + div + 1];
+//                printf("Check [%zu, %zu] from [%zu][%zu] and [%zu][%zu]\n",
+//                       i, start, div, start, i - div - 1, start + div + 1);
+                for (const auto& l: left) {
+                    for (const auto& r: right) {
+                        for (auto& p: productions) {
+                            if (std::find(p.prods.begin(), p.prods.end(), std::make_pair(l, r)) != p.prods.end()) {
+                                table[i][start].push_back(p.id);
+//                                printf("Matched rule %d: for [%zu, %zu]\n", p.id, i, start);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    auto& last = table.back().front();
+    return (std::find(last.begin(), last.end(), 0) != last.end());
 }
 
 int main(int argc, char* argv[]) {
@@ -104,6 +147,7 @@ int main(int argc, char* argv[]) {
     }
     int result = 0;
     std::vector<Production> productions;
+    std::vector<int> terminals;
     productions.resize(140);
     // Input's part 1 - language grammar
     for (string line; getline(input, line); ) {
@@ -122,11 +166,12 @@ int main(int argc, char* argv[]) {
         p.is_terminal = false;
         p.terminal = 0;
         while (line_stream >> token) {
-            printf("token: %s\n", token.c_str());
+//            printf("token: %s\n", token.c_str());
             /// Terminal production
             if (token.front() == '"') {
                 p.terminal = token[1];
                 p.is_terminal = true;
+                terminals.push_back(id);
             } else if (token.front() == '|') {
                 continue;
             } else {
@@ -145,22 +190,15 @@ int main(int argc, char* argv[]) {
     for (auto& p: productions) {
         print(p);
     }
-
+    /// Normalize two rules that doesn't match
 
     // Input's part 2 - words
     for (string line; getline(input, line); ) {
-        printf("Word: %s\n", line.c_str());
-        if (parse(line, productions)) {
+        if (parse(line, productions, terminals)) {
+            printf("Word: %s\n", line.c_str());
             result++;
         }
     }
-
-
-
-/*  while (input >> dat) {
-        arr.push_back(data);
-    }
-*/
 
     ::printf("Task 1 result: %d\n", result);
     return 0;
