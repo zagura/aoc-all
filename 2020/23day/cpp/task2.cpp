@@ -5,8 +5,8 @@
  *
  *    Description:  Advent of Code 2020 - Day 23
  *
- *        Version:  0.1.0
- *        Created:  01.01.2021 
+ *        Version:  0.2.0
+ *        Created:  02.01.2021
  *
  *         Author:  Michał Zagórski (zagura), <zagura6@gmail.com>
  *
@@ -25,19 +25,21 @@
 constexpr int million = 1000 * 1000;
 constexpr size_t kCupsSize = million;
 constexpr int kRoundCount = 10 * million;
+constexpr size_t kPickupSize = 3;
 using std::string;
 using std::vector;
 using std::array;
 using std::map;
 using std::stringstream;
-using cups = std::list<int>;
 
-cups::iterator get_next(cups& l, cups::iterator& current) {
-    return (std::next(current)  == l.end() ? l.begin() : std::next(current));
-}
+struct Node {
+    int prev;
+    int next;
+};
+using Cups = std::vector<Node>;
 
-void next_move(cups& round_cups, cups::iterator& current_iter) {
-    int current_cup = *current_iter;
+
+void next_move(Cups& cups, int& current) {
 //    printf("cups:");
 //    for (auto cup: round_cups) {
 //        if (*current_iter == cup) {
@@ -47,19 +49,20 @@ void next_move(cups& round_cups, cups::iterator& current_iter) {
 //        }
 //    }
 //    printf("\npickup: ");
-    cups::iterator next = current_iter;
-    next = get_next(round_cups, next);
-    vector<int> pick_up {};
-    for (int i = 0; i < 3; i++) {
+    int next = cups[current].next;
+
+    std::array<int, kPickupSize> pick_up;
+    pick_up[0] = next;
+    for (size_t i = 1; i < kPickupSize; i++) {
+        pick_up[i] = cups[pick_up[i-1]].next;
         // Wrap around
-        if (next == round_cups.end()) {
-            next = round_cups.begin();
-        }
-        pick_up.push_back(*next);
-        next = round_cups.erase(next);
 //        printf("%d, ", pick_up.back());
     }
-    int destination = current_cup - 1;
+    // Skip pick_up part
+    cups[current].next = cups[pick_up.back()].next;
+    cups[cups[current].next].prev = current;
+
+    int destination = current - 1;
     if (destination == 0) {
         destination = kCupsSize;
     }
@@ -69,11 +72,12 @@ void next_move(cups& round_cups, cups::iterator& current_iter) {
             destination = kCupsSize;
         }
     }
-    auto iter = std::find(round_cups.begin(), round_cups.end(), destination);
-    iter = get_next(round_cups, iter);
-    round_cups.insert(iter, pick_up.begin(), pick_up.end());
+    cups[pick_up.back()].next = cups[destination].next;
+    cups[destination].next = pick_up.front();
+    cups[pick_up.front()].prev = destination;
+    cups[cups[pick_up.back()].next].prev = pick_up.back();
 //    current_iter = std::find(round_cups.begin(), round_cups.end(), current_cup);
-    current_iter = get_next(round_cups, current_iter);
+    current = cups[current].next;
 //    printf("\ndestination: %d\n\n", destination);
 
 }
@@ -90,29 +94,28 @@ int main(int argc, char* argv[]) {
 
     string line;
     getline(input, line);
-    cups v {};
+    Cups cups {};
+    cups.resize(kCupsSize + 1);
+    int last = kCupsSize;
+    int start = line.front() - '0';
     for (char c: line) {
-        v.push_back(c - '0');
+        int val = c - '0';
+        cups[val].prev = last;
+        cups[last].next = val;
+        last = val;
     }
-    for (auto s = v.size() + 1; s <= kCupsSize; ++s) {
-        v.push_back(s);
+    for (auto s = line.size() + 1; s <= kCupsSize; ++s) {
+        cups[s].prev = last;
+        cups[last].next = s;
+        last = s;
     }
-    auto iter = v.begin();
     for (size_t round = 0; round < kRoundCount; round++) {
-        if (round % 10000 == 0) {
-            printf("Move: %zu", round);
-        }
 //        printf("-- move %zu --\n" , round + 1);
-        next_move(v, iter);
+        next_move(cups, start);
     }
 
-    auto one = std::find(v.begin(), v.end(), 1);
-    uint64_t a = *get_next(v, one);
-    one = get_next(v, one);
-    uint64_t b = *get_next(v, one);
-    for(auto& cup: v) {
-        printf(" %d", cup);
-    }
+    uint64_t a = cups[1].next;
+    uint64_t b = cups[a].next;
     printf("\n");
     printf("Part 2 result: %" PRIu64 "\n", a * b);
     return 0;
