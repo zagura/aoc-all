@@ -41,19 +41,33 @@ struct Tile {
     int id = 0;
     vector<string> data {};
     array<string, 4> sides {};
+    /**
+     * @brief set_tile - fulfill sides table with wides of data
+     */
+    void set_tile() {
+        /// Both sides order: **left to right**
+        /// and **up to down**
+        // up, left, right, down
+        sides[Side::up] = data.front();
+        sides[Side::down] = data.back();
+        string left {};
+        string right {};
+        for (auto s: data) {
+            left += s.front();
+            right += s.back();
+        }
+        sides[Side::left] = left;
+        sides[Side::right] = right;
+    }
     void flipV() {
         for(auto& s: data) {
             std::reverse(s.begin(), s.end());
         }
-        std::reverse(sides[Side::up].begin(), sides[Side::up].end());
-        std::reverse(sides[Side::down].begin(), sides[Side::down].end());
-        std::swap(sides[Side::left], sides[Side::right]);
+        set_tile();
     }
     void flipH() {
         std::reverse(data.begin(), data.end());
-        std::reverse(sides[Side::left].begin(), sides[Side::left].end());
-        std::reverse(sides[Side::right].begin(), sides[Side::right].end());
-        std::swap(sides[Side::up], sides[Side::down]);
+        set_tile();
     }
     void rotateR() {
         vector<string> data_copy = data;
@@ -64,13 +78,8 @@ struct Tile {
             }
             data_copy[row] = new_row;
         }
-
-        string tmp_side = sides.back();
-        for (size_t i = kSidesCount - 1; i > 0; --i) {
-            sides[i] = sides[i - 1];
-        }
-        sides.front() = tmp_side;
         data = data_copy;
+        set_tile();
     }
 
     void rotateL() {
@@ -84,11 +93,7 @@ struct Tile {
             }
             data_copy[row] = new_row;
         }
-        string tmp_side = sides.front();
-        for (size_t i = 0; i + 1 < kSidesCount; i++) {
-            sides[i] = sides[i + 1];
-        }
-        sides.back() = tmp_side;
+        set_tile();
         data = data_copy;
     }
 
@@ -117,28 +122,18 @@ struct Tile {
                sides[Side::up].back() == sides[Side::right].front(),
                sides[Side::down].front() == sides[Side::left].back(),
                sides[Side::down].back() == sides[Side::right].back());
-//        printf("%s\n", sides[Side::up].c_str());
-//        for (size_t i = 1; i < sides[Side::left].size() - 1; i++) {
-//            printf("%c%s%c\n", sides[Side::left][i], data[i-1].c_str(), sides[Side::right][i]);
-//        }
-//        printf("%s\n", sides[Side::down].c_str());
-//        printf("=========\n");
+        //        printf("%s\n", sides[Side::up].c_str());
+        //        for (size_t i = 1; i < sides[Side::left].size() - 1; i++) {
+        //            printf("%c%s%c\n", sides[Side::left][i], data[i-1].c_str(), sides[Side::right][i]);
+        //        }
+        //        printf("%s\n", sides[Side::down].c_str());
+        //        printf("=========\n");
     }
-    void set_tile() {
-        /// Both sides order: **left to right**
-        /// and **up to down**
-        // up, left, right, down
-        sides[Side::up] = data.front();
-        sides[Side::down] = data.back();
-        string left {};
-        string right {};
-        for (auto s: data) {
-            left += s.front();
-            right += s.back();
-        }
-        sides[Side::left] = left;
-        sides[Side::right] = right;
 
+
+    void remove_borders() {
+        // update sides before removing them from data
+        set_tile();
         data.erase(data.begin());
         data.pop_back();
         for (auto& s: data) {
@@ -186,8 +181,8 @@ struct TMatch {
     TMatch() = default;
     TMatch(const tptr& t1, const tptr& t2, Side side1, Side side2, bool r)
         : ids(t1->id, t2->id),
-          sides(side1, side2),
-          reverse(r) {}
+        sides(side1, side2),
+        reverse(r) {}
 };
 void check_sides(const tptr& tile, const tptr& other, vector<TMatch>& matched) {
     for (size_t side = 0; side < kSidesCount; side++) {
@@ -204,6 +199,7 @@ void check_sides(const tptr& tile, const tptr& other, vector<TMatch>& matched) {
         }
     }
 }
+
 vector<TMatch> find_matches(const tptr& tile, const std::vector<tptr>& all_tiles) {
     vector<TMatch> matched{};
     for(const auto& other: all_tiles) {
@@ -252,6 +248,62 @@ string str_side(Side side) {
     }
 }
 
+vector<std::pair<int, int>> get_coords(const vector<string>& pattern) {
+    vector<std::pair<int, int>> result {};
+    result.reserve(20);
+    for (size_t row = 0; row < pattern.size(); row++) {
+        for (size_t column = 0; column < pattern.front().size(); column++) {
+            if (pattern[row][column] == '#') {
+                result.emplace_back(row, column);
+            }
+        }
+    }
+    return result;
+}
+
+bool is_sea_monster(const vector<string>& tiles, const vector<string>& pattern,
+                    size_t row, size_t column) {
+    for (auto [r, c]: get_coords(pattern)) {
+        if (tiles[row + r][column + c] != '#') {
+            return false;
+        }
+    }
+    return true;
+}
+
+void mark_monster(vector<string>& tiles, const vector<string>& pattern,
+                    size_t row, size_t column) {
+    for (auto [r, c]: get_coords(pattern)) {
+        tiles[row + r][column + c] = 'O';
+    }
+}
+
+int try_match(vector<string>& tiles) {
+    static const vector<string> pattern = {
+        "                  # ",
+        "#    ##    ##    ###",
+        " #  #  #  #  #  #   "
+    };
+    int count = 0;
+    static const size_t width = pattern.front().size();
+    static const size_t height = pattern.size();
+    for (size_t row = 0; row < tiles.size() - height; row++) {
+        for (size_t column = 0; column < tiles.front().size() - width; column++) {
+            if (is_sea_monster(tiles, pattern, row, column)) {
+                mark_monster(tiles, pattern, row, column);
+            }
+        }
+    }
+    for (const auto& row: tiles) {
+        for (const auto& c: row) {
+            if (c == '#') {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
 int main(int argc, char* argv[]) {
     std::ifstream input { "input.in" };
     if (argc == 2) {
@@ -269,8 +321,8 @@ int main(int argc, char* argv[]) {
             input_tiles.push_back(std::make_shared<Tile>(current_tile));
             current_tile = Tile {};
         } else if (line.back() == ':') {
-//            printf("line: %s\n", line.c_str());
-//            printf("line.substr: %s\n", line.substr(5, 4).c_str());
+            //            printf("line: %s\n", line.c_str());
+            //            printf("line.substr: %s\n", line.substr(5, 4).c_str());
             int id = std::stoi(line.substr(5, 4));
             current_tile.id = id;
         } else {
@@ -308,20 +360,20 @@ int main(int argc, char* argv[]) {
     for (auto& t: input_tiles) {
         tiles.emplace(t->id, t);
     }
-    Tile t = *input_tiles.front();
-    t.print();
-    for (int i = 0; i < kSidesCount; i++) {
-        t.rotateR();
-        t.print();
-    }
+    //    Tile t = *input_tiles.front();
+    //    t.print();
+    //    for (int i = 0; i < kSidesCount; i++) {
+    //        t.rotateR();
+    //        t.print();
+    //    }
 
-    return 0;
+    //    return 0;
     /// First setup image[0][0] as tile with matches on right and down
     int id = unmatched.front();
     vector<TMatch> matches = find_matches(tiles[id], input_tiles);
     while (matches[0].sides.first != Side::right) {
-//        printf("Matches[0] side: %d\n", matches[0].sides.first);
-//        printf("Matches[1] side: %d\n", matches[1].sides.first);
+        //        printf("Matches[0] side: %d\n", matches[0].sides.first);
+        //        printf("Matches[1] side: %d\n", matches[1].sides.first);
         tiles[id]->rotateL();
         matches = find_matches(tiles[id], input_tiles);
 
@@ -334,7 +386,6 @@ int main(int argc, char* argv[]) {
         tiles[id]->flipH();
     }
 
-    return 0;
     image[0][0] = tiles[id];
     for (size_t row = 0; row < kMapSize; row++) {
         for (size_t column = 1; column < kMapSize; column++) {
@@ -348,30 +399,28 @@ int main(int argc, char* argv[]) {
                 if (tm.sides.first == Side::right) {
                     tptr other_tile = tiles[tm.ids.second];
                     printf("Find match with tile: %d \t", other_tile->id);
-                    if (tm.sides.second == Side::right) {
-//                        other_tile->flipH();
-                    }
                     switch (tm.sides.second) {
-                        case Side::down:
-                            other_tile->rotateL();
-                            [[fallthrough]];
-                        case Side::right:
-                            other_tile->rotateL();
-//                            other_tile->flipV();
-                            other_tile->flipH();
-                            [[fallthrough]];
-                        case Side::up:
-                            other_tile->rotateL();
-                            [[fallthrough]];
-                        case Side::left:
-                            break;
+                    case Side::down:
+                        other_tile->rotateL();
+                        [[fallthrough]];
+                    case Side::right:
+                        other_tile->rotateL();
+                        [[fallthrough]];
+                    case Side::up:
+                        other_tile->rotateL();
+                        [[fallthrough]];
+                    case Side::left:
+                        break;
                     }
-                    if (tm.reverse) {
+                    image[row][column - 1]->set_tile();
+                    other_tile->set_tile();
+                    check_sides(image[row][column -1], other_tile, matches);
+                    if (matches.back().reverse) {
                         other_tile->flipH();
                     }
-                    printf("(%zu, %zu)\n", row, column);
+                    printf("(%zu, %zu) %d -> %d\n", row, column, tm.reverse, matches.back().reverse);
                     image[row][column] = other_tile;
-//                    break;
+                    break;
                 }
             }
         }
@@ -384,18 +433,12 @@ int main(int argc, char* argv[]) {
                            str_side(tm.sides.second).c_str(),
                            (tm.reverse ? "True" : "False"));
                     tptr other_tile = tiles[tm.ids.second];
-                    if (tm.sides.second == Side::right) {
-//                        other_tile->flipV();
-                    }
                     switch (tm.sides.second) {
                     case Side::left:
                         other_tile->rotateL();
-//                        other_tile->flipV();
                         [[fallthrough]];
                     case Side::down:
                         other_tile->rotateL();
-                        other_tile->flipV();
-//                        other_tile->flipH();
                         [[fallthrough]];
                     case Side::right:
                         other_tile->rotateL();
@@ -403,20 +446,13 @@ int main(int argc, char* argv[]) {
                     case Side::up:
                         break;
                     }
-                    if (tm.reverse) {
+                    image[row][0]->set_tile();
+                    other_tile->set_tile();
+                    check_sides(image[row][0], other_tile, matches);
+                    if (matches.back().reverse) {
                         other_tile->flipV();
                     }
                     printf("(%zu, %zu)\n", row + 1, static_cast<size_t>(0));
-
-                    image[row][0]->print();
-                    other_tile->print();
-                    matches = find_matches(other_tile, input_tiles);
-                    for (auto& match: matches) {
-                        if (match.sides.first == Side::left) {
-                            other_tile->flipV();
-                            other_tile->flipH();
-                        }
-                    }
                     image[row + 1][0] = other_tile;
                     break;
                 }
@@ -425,21 +461,12 @@ int main(int argc, char* argv[]) {
     }
 
 
-    /// Print whole image
+    /// Print whole image with borders
     printf("Total map\n\n");
     for (size_t row = 0; row < kMapSize; row++) {
-        for (size_t subrow = 0; subrow < image[row].front()->data.size() + 2; subrow++) {
+        for (size_t subrow = 0; subrow < image[row].front()->data.size(); subrow++) {
             for (size_t column = 0; column < kMapSize; column++) {
-                if (subrow == 0) {
-                    printf("%s ", image[row][column]->sides[Side::up].c_str());
-                } else if (subrow == image[row].front()->data.size() + 1) {
-                    printf("%s ", image[row][column]->sides[Side::down].c_str());
-                } else {
-                    printf("%c", image[row][column]->sides[Side::left][subrow]);
-                    printf("%s", image[row][column]->data[subrow - 1].c_str());
-                    printf("%c", image[row][column]->sides[Side::right][subrow]);
-                    printf(" ");
-                }
+                printf("%s ", image[row][column]->data[subrow].c_str());
             }
             printf("\n");
         }
@@ -450,14 +477,44 @@ int main(int argc, char* argv[]) {
         for (size_t column = 0; column < kMapSize; column++) {
             if (image[row][column]) {
                 printf("%d ", image[row][column]->id);
-//                image[row][column]->print();
+                //                image[row][column]->print();
             }
         }
         printf("\n");
     }
     printf("\n");
 
+    for (size_t row = 0; row < kMapSize; row++) {
+        for (size_t column = 0; column < kMapSize; column++) {
+            image[row][column]->remove_borders();
+        }
+    }
 
+    printf("Total map\n\n");
+    vector<string> data {};
+    for (size_t row = 0; row < kMapSize; row++) {
+        for (size_t subrow = 0; subrow < image[row].front()->data.size(); subrow++) {
+            string merged_row = {};
+            for (size_t column = 0; column < kMapSize; column++) {
+                printf("%s ", image[row][column]->data[subrow].c_str());
+                merged_row += image[row][column]->data[subrow];
+            }
+            data.push_back(merged_row);
+            printf("\n");
+        }
+        printf("\n");
+    }
+    printf("\n");
+
+    Tile main_tile {};
+    main_tile.data = data;
+    main_tile.rotateR();
+    main_tile.flipV();
+    result = try_match(main_tile.data);
+    for (auto& s: main_tile.data) {
+        printf("%s\n", s.c_str());
+    }
+    printf("Answer: %llu\n", result);
     return 0;
 }
 
