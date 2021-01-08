@@ -20,6 +20,6 @@ This is collection of solutions in Advent of Code from different editions:
 | 2017    |  2.5/25 |
 | 2018    |  16/25  |
 | 2019    |  6/6    |
-| 2020    |  0/1    |
+| 2020    |  25/25  |
 
 
