@@ -27,42 +27,28 @@ using std::vector;
 using std::array;
 using std::map;
 using std::stringstream;
+constexpr size_t kRoundCount = 30 * 1000 * 1000;
 
-int play_game(vector<int> numbers, int round_count) {
+int play_game(vector<int> numbers, size_t round_count) {
     std::unordered_map<int, std::pair<int, int>> usages {};
+    usages.reserve(round_count + 1);
     // Prepare
     for (size_t round = 0; round < numbers.size(); round++) {
         usages[numbers[round]] = std::make_pair(-1, round + 1);
     }
-    for (int round = numbers.size() + 1; round < round_count + 5; round++) {
+    for (size_t round = numbers.size() + 1; round < round_count + 5; round++) {
         int number = numbers.back();
-        if (usages.find(number) != usages.end()) {
-            auto [previous_use, previous_round] = usages.at(number);
-//            printf("round: %d: n = %d, prev = %d\n", round, number, previous_use);
-            int next_number = 0;
-            if (previous_use != -1) {
-                next_number = round - previous_use - 1;
-            }
-            numbers.push_back(next_number);
-            if (usages.find(next_number) != usages.end()) {
-                usages[next_number] = std::make_pair(usages[next_number].second, round);
-            } else {
-                usages[next_number] = std::make_pair(-1, round);
-            }
-
-        } else {
-            printf("round: %d: n = %d, prev = %d\n", round, number, -1);
-            int next_number = 0;
-            numbers.push_back(next_number);
-            if (usages.find(next_number) != usages.end()) {
-                usages[next_number] = std::make_pair(usages[next_number].second, round);
-            } else {
-                usages[next_number] = std::make_pair(-1, round);
-            }
+        auto [previous_use, previous_round] = usages.at(number);
+        int next_number = 0;
+        if (previous_use != -1) {
+            next_number = round - previous_use - 1;
         }
-    }
-    for (size_t r = round_count - 5; r < numbers.size(); r++) {
-        printf("n[%zu] = %d\n", r, numbers.at(r));
+        numbers.push_back(next_number);
+        if (usages.find(next_number) != usages.end()) {
+            usages[next_number] = std::make_pair(usages[next_number].second, round);
+        } else {
+            usages[next_number] = std::make_pair(-1, round);
+        }
     }
     return numbers.at(round_count - 1);
 }
@@ -84,14 +70,10 @@ int main(int argc, char* argv[]) {
         numbers.push_back(n);
     }
     result = play_game(numbers, 2020);
-    int result2 = play_game(numbers, 30000000);
-/*  while (input >> dat) {
-        arr.push_back(data);
-    }
-*/
+    int result2 = play_game(numbers, kRoundCount);
 
     ::printf("Task 1 result: %d\n", result);
-    ::printf("Task 1 result: %d\n", result2);
+    ::printf("Task 2 result: %d\n", result2);
     return 0;
 }
 
