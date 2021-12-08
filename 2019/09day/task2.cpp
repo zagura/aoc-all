@@ -300,7 +300,7 @@ int main() {
                 modes[i] = static_cast<AccessMode>(mode % 10);
                 mode /= 10;
             }
-            cout << "ip: " << processor.ip << " instruction: " << instruction << endl;
+//            cout << "ip: " << processor.ip << " instruction: " << instruction << endl;
             opcodes.at(opcode)(modes);
 //            processor.print();
         }
