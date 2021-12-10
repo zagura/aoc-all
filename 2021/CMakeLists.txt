@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(aoc_2020)
+project(aoc_2021)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-g -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-include-dirs -Wnoexcept -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wundef -Wno-unused")
 
