@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  task1.cpp
+ *       Filename:  task2.cpp
  *
  *    Description:  Advent of Code 2021 - Day 18 "Snailfish"
  *
@@ -45,7 +45,7 @@ struct parse_number {
 
 number* parsing_number(const std::string& s) {
     std::vector<parse_number> not_parsed {};
-    number* n;
+    number* n = nullptr;
     for (auto c: s) {
         if (c == '[') {
             not_parsed.emplace_back();
@@ -61,7 +61,7 @@ number* parsing_number(const std::string& s) {
                 pn.state++;
             }
         } else if (c == ',') {
-             not_parsed.back().state++;
+            not_parsed.back().state++;
         } else if (c == ']') {
             number* current_number = new number();
             current_number->left = not_parsed.back().left;
@@ -136,9 +136,9 @@ std::pair<number*, int> last(number* current, int level) {
 }
 
 std::pair<number*, int> next(number* current, int level) {
-//    printf("Next: %p: %d", current, level);
+    //    printf("Next: %p: %d", current, level);
     while (current->parent) {
-//        printf("Next-inwhile: %p: %d\n", current, level);
+        //        printf("Next-inwhile: %p: %d\n", current, level);
         if (current->parent->left == current) {
             if (current->parent->right) {
                 current = current->parent->right;
@@ -171,9 +171,6 @@ std::pair<number*, int> prev(number* current, int level) {
 
 bool split(number* n, int level) {
     if (n->value >= 10) {
-        printf("In split - level %d :", level);
-        print(*n);
-        printf("\n");
         int value = n->value;
         n->left = new number;
         n->left->parent = n;
@@ -191,9 +188,6 @@ bool explode(number* current, int level) {
     // We jump over leafs, which would have level 5 in the case
     if (level == 5) {
         auto n = current->parent;
-        printf("In explode - level %d :", level - 1);
-        print(*n);
-        printf("\n");
         if (n->left && n->right) {
             int left_val = n->left->value;
             int right_val = n->right->value;
@@ -212,27 +206,18 @@ bool explode(number* current, int level) {
 bool reduce(number* head) {
     std::pair<number*, int> data = first(head, 0);
     while (data.first != nullptr) {
-//        printf("Value %p, level %d\n\n", data.first, data.second);
         if (explode(data.first, data.second)) {
-            printf("Explode ");
             return true;
         }
-
         data = next(data.first, data.second);
     }
     data = first(head, 0);
     while (data.first != nullptr) {
-        //        printf("Value %p, level %d\n\n", data.first, data.second);
         if (split(data.first, data.second)) {
-            printf("Split ");
             return true;
         }
         data = next(data.first, data.second);
     }
-
-
-
-    printf("Nothing to do here: ");
     return false;
 }
 
@@ -249,6 +234,7 @@ size_t count_sum(number* head) {
     }
     return total;
 }
+
 size_t count_magnitude(number* node) {
     if (not node->left and not node->right) {
         return node->value;
@@ -262,29 +248,42 @@ size_t count_magnitude(number* node) {
     }
     return magnitude;
 }
-number* add(number* left, number* right) {
-    printf("Add ");
-    print(*left);
-    printf(" to ");
-    print(*right);
-    printf("\n");
+
+number* copy(number* origin, number* new_parent) {
+    number* copy_node = nullptr;
+    if (origin) {
+        copy_node = new number;
+        copy_node->left = copy(origin->left, copy_node);
+        copy_node->right = copy(origin->right, copy_node);
+        copy_node->parent = new_parent;
+        copy_node->value = origin->value;
+    }
+    return copy_node;
+}
+
+number* add(number* l, number* r) {;
     number* result;
     result = new number();
-    result->left = left;
-    result->right = right;
-    left->parent = result;
-    right->parent = result;
-    printf("Before reduction: ");
-    print(*result);
-    printf("\n");
+    result->left = copy(l, result);
+    result->right = copy(r, result);
     while (reduce(result)) {
-        print(*result);
-        printf("  --> sum: %zu", count_sum(result));
-        printf("\n");
     }
-    print(*result);
-    printf("\n");
     return result;
+}
+
+size_t check_magnitude(number* n1, number* n2, size_t max_magnitude) {
+    number* result = add(n1, n2);
+    size_t current_magnitude = count_magnitude(result);
+    if (current_magnitude > max_magnitude) {
+        printf("New max magnitude %zu\n", current_magnitude);
+        printf("Used result: ");
+        print(*result);
+        printf("\n");
+        max_magnitude = current_magnitude;
+    }
+    clear(*result);
+    delete result;
+    return max_magnitude;
 }
 
 int main(int argc, char* argv[]) {
@@ -302,24 +301,19 @@ int main(int argc, char* argv[]) {
         numbers.push_back(parsing_number(line));
     }
 
+    size_t max_magnitude = 0;
+    for (auto& n1: numbers) {
+        for (auto& n2: numbers) {
+            if (n1 != n2) {
+                max_magnitude = check_magnitude(n1, n2, max_magnitude);
+            }
+        }
+    }
+    printf("Task 2 result %zu\n", max_magnitude);
     for (auto& n: numbers) {
-        print(*n);
-        printf("\n");
-//        reduce(n);
-//        print(*n);
-//        printf("\n");
+        clear(*n);
+        delete n;
     }
-
-    number* result = numbers.front();
-    for (size_t i = 1; i < numbers.size(); i++) {
-        result = add(result, numbers[i]);
-    }
-    printf("Result is: ");
-    print(*result);
-    printf("\n");
-//    ::printf("Task 1 result: %" PRId64 "\n", line_no);
-    printf("Task 1 result %zu\n", count_magnitude(result));
-    clear(*result);
     numbers.clear();
     return 0;
 }
