@@ -32,13 +32,15 @@ size_t diff(int a, int b) {
     return abs(a - b) * abs(a - b);
 }
 
+
 struct Beacon {
     int x;
     int y;
     int z;
     int scanner_id {};
     int line_no {};
-    Beacon(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
+    int global_id { -1 };
+    Beacon(int _x, int _y, int _z) : x(_x), y(_y), z(_z), scanner_id(-1), line_no(-1), global_id(-1) {}
     explicit Beacon(std::string line, int scanner, int number) {
         std::stringstream line_stream { line };
         std::array<int, 3> results {};
@@ -51,9 +53,28 @@ struct Beacon {
         z = results[2];
         scanner_id = scanner;
         line_no = number;
+        global_id = -1;
+    }
+
+//    Beacon (const Beacon& b) = default;
+//    Beacon(const Beacon& b) {
+//        x = b.x;
+//        y = b.y;
+//        z = b.z;
+//        scanner_id = b.scanner_id;
+//        line_no = b.line_no;
+//        global_id = b.global_id;
+//    }
+    Beacon(): x(0), y(0), z(0), scanner_id(-1), line_no(-1), global_id(-1) {}
+
+    void set_gid(int id) {
+        global_id = id;
     }
     size_t dist(const Beacon& other) {
         return diff(other.x, x) + diff(other.y, y) + diff(other.z, z);
+    }
+    size_t m_dist(const Beacon& other) {
+        return abs(other.x - x) + abs(other.y - y) + abs(other.z - z);
     }
     std::string str() const {
         return "("
@@ -61,35 +82,108 @@ struct Beacon {
                + std::to_string(this->y) + ","
                + std::to_string(this->z) + ")";
     }
-    void move_right() {
-        int tmp = z;
-        z = y;
-        y = x;
-        x = tmp;
+    static Beacon move_right(Beacon source) noexcept {
+
+        int tmp = source.z;
+        source.z = source.y;
+        source.y = source.x;
+        source.x = tmp;
+        return source;
     }
-    void mirror_x() {
-        x *= (-1);
+    static Beacon mirror_x(Beacon source) noexcept {
+        source.x *= (-1);
+        return source;
     }
-    void mirror_y() {
-        y *= (-1);
+    static Beacon mirror_y(Beacon source) noexcept {
+        source.y *= (-1);
+        return source;
     }
-    void mirror_z() {
-        z *= -1;
+    static Beacon mirror_z(Beacon source) noexcept {
+        source.z *= -1;
+        return source;
     }
-    void rotate() {
-        auto tmp_x = x;
-        x = z;
-        z = tmp_x;
+    static Beacon rotate(Beacon source) noexcept {
+        auto tmp_x = source.x;
+        source.x = source.z;
+        source.z = tmp_x;
+        return source;
     }
-    void translate(int mov_x, int mov_y, int mov_z) {
+    void translate(int mov_x, int mov_y, int mov_z) noexcept {
         x += mov_x;
         y += mov_y;
         z += mov_z;
     }
-    void translate(const Beacon& p) {
+    void translate(const Beacon& p) noexcept {
         translate(p.x, p.y, p.z);
     }
+
+
 };
+//template <typename T>
+std::array<std::function<Beacon(Beacon)>, 24> transformations {{
+    { [](Beacon b) noexcept { return b; }},
+    { [](Beacon b) noexcept { return Beacon::move_right(b); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::move_right(b)); }},
+
+    { [](Beacon b) noexcept { return Beacon::mirror_x(b); }},
+    { [](Beacon b) noexcept { return Beacon::mirror_y(b); }},
+    { [](Beacon b) noexcept { return Beacon::mirror_z(b); }},
+    { [](Beacon b) noexcept { return Beacon::mirror_x(Beacon::mirror_y(Beacon::mirror_z((b)))); }},
+    { [](Beacon b) noexcept { return Beacon::mirror_x(Beacon::mirror_y(b)); }},
+    { [](Beacon b) noexcept { return Beacon::mirror_x(Beacon::mirror_z(b)); }},
+    { [](Beacon b) noexcept { return Beacon::mirror_y(Beacon::mirror_z(b)); }},
+
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::mirror_x(b)); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::mirror_y(b)); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::mirror_z(b)); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::mirror_x(Beacon::mirror_y(Beacon::mirror_z((b))))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::mirror_x(Beacon::mirror_y(b))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::mirror_x(Beacon::mirror_z(b))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::mirror_y(Beacon::mirror_z(b))); }},
+
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::move_right(Beacon::mirror_x(b))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::move_right(Beacon::mirror_y(b))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::move_right(Beacon::mirror_z(b))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_y(Beacon::mirror_z((b)))))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_y(b)))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_z(b)))); }},
+    { [](Beacon b) noexcept { return Beacon::move_right(Beacon::move_right(Beacon::mirror_y(Beacon::mirror_z(b)))); }},
+
+//    { [](Beacon b) noexcept { return Beacon::rotate(b); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(b)); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::move_right(b))); }},
+
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::mirror_x(b)); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::mirror_y(b)); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::mirror_z(b)); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::mirror_x(Beacon::mirror_y(Beacon::mirror_z((b))))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::mirror_x(Beacon::mirror_y(b))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::mirror_x(Beacon::mirror_z(b))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::mirror_y(Beacon::mirror_z(b))); }},
+
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::mirror_x(b))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::mirror_y(b))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::mirror_z(b))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_y(Beacon::mirror_z((b)))))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_y(b)))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_z(b)))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::mirror_y(Beacon::mirror_z(b)))); }},
+
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::move_right(Beacon::mirror_x(b)))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::move_right(Beacon::mirror_y(b)))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::move_right(Beacon::mirror_z(b)))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_y(Beacon::mirror_z((b))))))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_y(b))))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::move_right(Beacon::mirror_x(Beacon::mirror_z(b))))); }},
+//    { [](Beacon b) noexcept { return Beacon::rotate(Beacon::move_right(Beacon::move_right(Beacon::mirror_y(Beacon::mirror_z(b))))); }},
+
+}};
+
+size_t m_dist(const Beacon& b1, const Beacon& b2) {
+    return abs(b1.x - b2.x) + abs(b1.y - b2.y) + abs(b1.z - b2.z);
+}
+
+
 
 int main(int argc, char* argv[]) {
     std::ifstream input { "input.in" };
@@ -105,7 +199,7 @@ int main(int argc, char* argv[]) {
     scanners.reserve(100);
     int scanner_id = -1;
     int line_no = 0;
-    std::set<int> points {};
+    std::map<int, Beacon> points {};
     for (std::string line; std::getline(input, line); ) {
         if (line.empty()) {
             continue;
@@ -116,8 +210,9 @@ int main(int argc, char* argv[]) {
             scanner_id++;
             continue;
         }
-        scanners.back().emplace_back(line, scanner_id, line_no);
-        points.emplace(line_no);
+        Beacon b(line, scanner_id, line_no);
+        scanners.back().push_back(b);
+        points.emplace(line_no, b);
         line_no++;
 
     }
@@ -134,35 +229,86 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+//    for (auto& [line_no, beacon]: points) {
+//        printf("global id: %d\n", beacon.global_id);
+//    }
+    size_t result = 0;
+    std::map<size_t, int> intersects {};
+    std::vector<std::set<int>> global_ids {};
     for (auto& n1: neighbors) {
+        printf("Line_no %d\n", n1.first);
         for (auto& n2: neighbors) {
-            if (n1.first != n2.first) {
+            if (n1.first < n2.first) {
                 std::vector<int> intersect {};
                 std::set_intersection(n1.second.begin(), n1.second.end(),
                                       n2.second.begin(), n2.second.end(),
                                       std::back_inserter(intersect));
                 if (intersect.size() > 1) {
-                    printf("Common points: %d %d\n", n1.first, n2.first);
-                    if (points.contains(n1.first) && points.contains(n2.first)) {
-                        points.erase(points.find(n2.first));
+                    /// For intersect.size() == 1, there would be two ends
+                    /// of the same section
+                    intersects[intersect.size()]++;
+                    printf("Common points: %d (%d) [%d] and %d (%d) [%d]: %zu\n", n1.first,
+                           points[n1.first].scanner_id , points[n1.first].global_id, n2.first,
+                           points[n2.first].scanner_id, points[n2.first].global_id, intersect.size());
+                // Assign global beacon id to both beacons
+                    int gid = points[n1.first].global_id;
+                    if (gid == -1) {
+//                        printf("New global id\n");
+                        gid = global_ids.size();
+                        points[n1.first].global_id = gid;
+                        global_ids.emplace_back();
+                        global_ids[gid].insert(n1.first);
                     }
+                    points[n2.first].global_id = gid;
+                    global_ids[gid].insert(n2.first);
                 }
+//                for (size_t i = 0; i < global_ids.size(); ++i) {
+//                    auto& id_set = global_ids[i];
+//                    if (id_set.contains(n1.first)) {
+//                        if (!id_set.contains(n2.first)) {
+//                            id_set.insert(n2.first);
+//                            points[n2.first].set_gid(i);
+//                        }
+//                    }
+//                }
             }
         }
     }
-    printf("Total distance count: %zu\n", distances.size());
-    size_t skipped = 0;
-    std::erase_if(distances, [](auto& d) { return d.second.size() == 1;});
-    for (auto& d: distances) {
-        if (d.second.size() == 1) {
-            skipped++;
-        } else {
-            printf("Distance: %d - size(%zu)\n", d.first, d.second.size());
+    for (const auto& gid_set: global_ids) {
+        printf("Global id %d:", points[*gid_set.begin()].global_id);
+        for (auto& el: gid_set) {
+            printf(" %d", el);
+        }
+        printf("\n");
+    }
+    size_t single_points = 0;
+    for (auto& [id, point]: points) {
+        if (point.global_id == -1) {
+            printf("point without pair: %d\n", id);
+            single_points++;
         }
     }
+    printf("Total different beacons: %zu\n", single_points + global_ids.size());
 
-    printf("Skipped: %zu\n", skipped);
-    ::printf("Task 1 result: %zu\n", points.size());
+    // Assume 1st scanner position to (0, 0, 0)
+    for (int current_scanner = 1; current_scanner <= scanner_id; current_scanner++) {
+
+
+
+    }
+//    Beacon b = points.begin()->second;
+//    printf("Beacon: %s\n", b.str().c_str());
+//    int id = 0;
+//    for (auto& transformation: transformations) {
+//        Beacon result_beacon = transformation(b);
+//        printf("Transformation: %d => %s\n", id, result_beacon.str().c_str());
+//        id++;
+//    }
+    for(const auto& num: intersects) {
+        printf("Size: %zu: count %d\n", num.first, num.second);
+    }
+
+    ::printf("Task 2 result: %zu\n", result);
     return 0;
 }
 
