@@ -10,4 +10,5 @@ else()
 endif()
 add_executable(task1_d19.elf task1.cpp)
 add_executable(task2_d19.elf task2.cpp)
+target_compile_options(task2_d19.elf PUBLIC -Wall -Wextra -Wformat -pedantic)
 
