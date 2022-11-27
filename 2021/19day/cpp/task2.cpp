@@ -40,7 +40,9 @@ struct Beacon {
     int scanner_id {};
     int line_no {};
     int global_id { -1 };
-    Beacon(int _x, int _y, int _z) : x(_x), y(_y), z(_z), scanner_id(-1), line_no(-1), global_id(-1) {}
+    Beacon(int _x, int _y, int _z) : x(_x), y(_y), z(_z),
+        scanner_id(-1), line_no(-1), global_id(-1) {}
+
     explicit Beacon(std::string line, int scanner, int number) {
         std::stringstream line_stream { line };
         std::array<int, 3> results {};
@@ -56,16 +58,8 @@ struct Beacon {
         global_id = -1;
     }
 
-//    Beacon (const Beacon& b) = default;
-//    Beacon(const Beacon& b) {
-//        x = b.x;
-//        y = b.y;
-//        z = b.z;
-//        scanner_id = b.scanner_id;
-//        line_no = b.line_no;
-//        global_id = b.global_id;
-//    }
     Beacon(): x(0), y(0), z(0), scanner_id(-1), line_no(-1), global_id(-1) {}
+
     bool operator==(const Beacon& other) {
         return other.x == x
             && other.y == y
@@ -222,7 +216,6 @@ bool is_transfrom_correct(std::vector<std::pair<Beacon, Beacon>>& transformed) {
                 if (((p2.x - p1.x) != (b2.x - b1.x))
                     || ((p2.y - p1.y) != (b2.y - b1.y))
                     || ((p2.z - p1.z) != (b2.z - b1.z))) {
-//                    printf("Fail on points (%s,%s) -> (%s,%s)\n", p1.str().c_str(), p2.str().c_str(), b1.str().c_str(), b2.str().c_str());
                     return false;
                 }
             }
@@ -276,10 +269,8 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-//    for (auto& [line_no, beacon]: points) {
-//        printf("global id: %d\n", beacon.global_id);
-//    }
-    size_t result = 0;
+
+
     std::map<size_t, int> intersects {};
     std::map<std::size_t, std::set<int>> global_ids {};
     for (auto& n1: neighbors) {
@@ -296,9 +287,9 @@ int main(int argc, char* argv[]) {
                     /// For intersect.size() == 1, there would be two ends
                     /// of the same section
                     intersects[intersect.size()]++;
-                    printf("Common points: %d (%d) [%d] and %d (%d) [%d]: %zu\n", n1.first,
-                           points[n1.first].scanner_id , points[n1.first].global_id, n2.first,
-                           points[n2.first].scanner_id, points[n2.first].global_id, intersect.size());
+//                    printf("Common points: %d (%d) [%d] and %d (%d) [%d]: %zu\n", n1.first,
+//                           points[n1.first].scanner_id , points[n1.first].global_id, n2.first,
+//                           points[n2.first].scanner_id, points[n2.first].global_id, intersect.size());
                 // Assign global beacon id to both beacons
                     int gid = points[n1.first].global_id;
                     int gid2 = points[n2.first].global_id;
@@ -328,15 +319,6 @@ int main(int argc, char* argv[]) {
                         global_ids[gid].insert(n2.first);
                     }
                 }
-//                for (size_t i = 0; i < global_ids.size(); ++i) {
-//                    auto& id_set = global_ids[i];
-//                    if (id_set.contains(n1.first)) {
-//                        if (!id_set.contains(n2.first)) {
-//                            id_set.insert(n2.first);
-//                            points[n2.first].set_gid(i);
-//                        }
-//                    }
-//                }
             }
         }
     }
@@ -347,14 +329,7 @@ int main(int argc, char* argv[]) {
         }
         printf("\n");
     }
-//    size_t single_points = 0;
-//    for (auto& [id, point]: points) {
-//        if (point.global_id == -1) {
-//            printf("point without pair: %d\n", id);
-//            single_points++;
-//        }
-//    }
-//    printf("Total different beacons: %zu\n", single_points + global_ids.size());
+
 
     // Assume 1st scanner position to (0, 0, 0)
     std::vector<bool> scanner_passes (scanner_id, false);
@@ -364,6 +339,7 @@ int main(int argc, char* argv[]) {
     std::map<size_t, size_t> vector_sizes{};
     bool pass_change = true;
     while(pass_change) {
+        printf("Looping scanners\n");
         pass_change = false;
         for (int current_scanner = 1; current_scanner <= scanner_id; current_scanner++) {
             if (scanner_passes[current_scanner]) {
@@ -401,7 +377,6 @@ int main(int argc, char* argv[]) {
             vector_sizes[matched_beacons.size()]++;
             /// Here, we assume that all previous scanners have already fixed orientation
             /// Try to match correct transformation and verify through diffs between points
-//            size_t tid = 0;
             for (const auto& transform: transformations) {
                 std::vector<std::pair<Beacon, Beacon>> transformed {};
                 for (auto& beacon_pair: matched_beacons) {
@@ -435,24 +410,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    size_t vec_sum = 0;
-    for(const auto& [vec_size, count]: vector_sizes) {
-        printf("Vector size: (%zu), count (%zu)\n", vec_size, count);
-        vec_sum += count;
-    }
-    printf("vector_sizes %zu sum %zu\n", vector_sizes.size(), vec_sum);
-
-//    Beacon b = points.begin()->second;
-//    printf("Beacon: %s\n", b.str().c_str());
-//    int id = 0;
-//    for (auto& transformation: transformations) {
-//        Beacon result_beacon = transformation(b);
-//        printf("Transformation: %d => %s\n", id, result_beacon.str().c_str());
-//        id++;
-//    }
-//    for(const auto& num: intersects) {
-//        printf("Size: %zu: count %d\n", num.first, num.second);
-//    }
 
     size_t max_dist = 0;
     for (auto& [id, pos]: scanner_positions) {
@@ -466,8 +423,7 @@ int main(int argc, char* argv[]) {
         }
         printf("Transformed scanner id: %d position %s\n", id, pos.str().c_str());
     }
-    result = max_dist;
-    ::printf("Task 2 result: %zu\n", result);
+    ::printf("Task 2 result: %zu\n", max_dist);
     return 0;
 }
 

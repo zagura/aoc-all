@@ -13,6 +13,7 @@
  * =====================================================================================
  */
 #include <iostream>
+#include <limits>
 #include <string>
 #include <fstream>
 #include <map>
