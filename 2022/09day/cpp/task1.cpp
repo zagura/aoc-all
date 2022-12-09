@@ -20,10 +20,6 @@
 #include <map>
 #include <set>
 #include <sstream>
-#include <queue>
-
-static std::array<int, 4> delta_x = { -1, 1, 0, 0 };
-static std::array<int, 4> delta_y = { 0, 0, -1, 1 };
 
 // first - horizontal move (left, right)
 // second - vertical move (up, down)

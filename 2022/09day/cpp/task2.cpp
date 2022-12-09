@@ -20,10 +20,7 @@
 #include <map>
 #include <set>
 #include <sstream>
-#include <queue>
-
-static std::array<int, 4> delta_x = { -1, 1, 0, 0 };
-static std::array<int, 4> delta_y = { 0, 0, -1, 1 };
+#include <vector>
 
 // first - horizontal move (left, right)
 // second - vertical move (up, down)
@@ -36,7 +33,7 @@ const std::map<char, std::pair<int, int>> moves {
 };
 
 std::pair<int, int> make_move(std::pair<int, int>& head,
-                              std::pair<int, int>& tail) {
+                              std::pair<int, int> tail) {
     bool vertical = false, horizontal = false;
     if (head.first - tail.first > 1) {
         tail.first++;
@@ -71,7 +68,7 @@ int main(int argc, char* argv[]) {
     }
     std::pair<int, int> head (0, 0);
     std::vector<std::pair<int, int>> tails(9);
-
+    std::set<std::pair<int, int>> part1_trail;
     std::set<std::pair<int, int>> trail;
     for (std::string line; getline(input, line); ) {
         std::stringstream line_stream { line };
@@ -83,15 +80,16 @@ int main(int argc, char* argv[]) {
             head.first += diff.first;
             head.second += diff.second;
             auto before = head;
+            part1_trail.insert(make_move(before, tails.front()));
             for (auto& tail: tails) {
-                make_move(before, tail);
+                tail = make_move(before, tail);
                 before = tail;
             }
             ::printf("Back (%d, %d)\n", before.first, before.second);
             trail.insert(before);
         }
     }
-
+    ::printf("Task 1 result: %zu\n", part1_trail.size());
     ::printf("Task 2 result: %zu\n", trail.size());
     return 0;
 }
