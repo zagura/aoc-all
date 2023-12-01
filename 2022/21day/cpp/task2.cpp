@@ -92,6 +92,7 @@ int64_t part2(const std::map<std::string, std::shared_ptr<Node>>& g, const std::
     case '*':
 
     }
+    return -1;
 }
 
 int main(int argc, char* argv[]) {

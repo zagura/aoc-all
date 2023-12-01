@@ -64,7 +64,7 @@ level = y_min - 1
 water = [current_coordinates[0]]
 
 water_q = Queue()
-water_q.put({'x': 
+water_q.put({'x': ''})
 
 
 
@@ -100,7 +100,6 @@ while level < y_max:
     print_well(puzzle=puzzle)
     print(level)
 
-    
 
 '''
 
