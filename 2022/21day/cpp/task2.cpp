@@ -75,7 +75,7 @@ void solve(std::map<std::string, std::shared_ptr<Node>>& g, const std::string& m
 }
 
 
-int64_t part2(const std::map<std::string, std::shared_ptr<Node>>& g, const std::string& m) {
+int64_t part2(std::map<std::string, std::shared_ptr<Node>>& g, const std::string& m) {
     const auto& node = g[m];
     if (!node->parent) { return 0; }
     if (node->parent->key == "root") {
@@ -84,13 +84,13 @@ int64_t part2(const std::map<std::string, std::shared_ptr<Node>>& g, const std::
     switch (node->parent->op) {
         case '+':
 
-    case '-':
+        case '-':
+            break;
 
-
-    case '/':
-
-    case '*':
-
+        case '/':
+            break;
+        case '*':
+            break;
     }
     return -1;
 }
