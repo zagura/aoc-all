@@ -44,7 +44,8 @@ void next_move(Cups& cups, int& current) {
     }
     // Skip pick_up part
     int destination = current - 1;
-    current = cups[current] = cups[pick_up.back()];
+    cups[current] = cups[pick_up.back()];
+    current = cups[current];
 
 
     if (destination == 0) {
@@ -98,4 +99,3 @@ int main(int argc, char* argv[]) {
     printf("Part 2 result: %" PRIu64 "\n", a * b);
     return 0;
 }
-

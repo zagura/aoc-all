@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <functional>
 #include <sstream>
 #include <algorithm>
 #include <array>
@@ -140,7 +141,7 @@ void leave_most_frequent(std::vector<std::pair<Beacon, Beacon>>& beacons) {
     }
 
     /// Remove other beacon pair
-    std::erase_if(beacons, [&max_count](const auto& beacon_pair) {
+    std::erase_if(beacons, [&max_count](const auto& beacon_pair) noexcept {
         return beacon_pair.first.scanner_id != max_count.first;
     });
 }

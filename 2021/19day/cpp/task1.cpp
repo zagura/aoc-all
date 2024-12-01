@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <functional>
 #include <sstream>
 #include <algorithm>
 #include <array>

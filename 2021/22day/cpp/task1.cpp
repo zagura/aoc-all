@@ -46,7 +46,9 @@ struct Area3D {
     std::pair<int, int> y_range {};
     std::pair<int, int> z_range {};
     bool action = false; // off
-    Area3D(std::pair<int, int> range_x, std::pair<int, int> range_y, std::pair<int, int> range_z, bool on)
+    Area3D(std::pair<int, int> range_x,
+           std::pair<int, int> range_y,
+           std::pair<int, int> range_z, bool on) noexcept
         : x_range(range_x), y_range(range_y), z_range(range_z), action(on) {}
 };
 

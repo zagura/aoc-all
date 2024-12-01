@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <map>
 #include <list>
+#include <vector>
 
 const std::map<char, int> scores {
     { ')', 3 },
