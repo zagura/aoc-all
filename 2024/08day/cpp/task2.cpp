@@ -70,9 +70,6 @@ int gcd(int left, int right) {
         greater = lower;
         lower = tmp;
     }
-    if (lower == 0) {
-        return greater;
-    }
     return lower;
 }
 
