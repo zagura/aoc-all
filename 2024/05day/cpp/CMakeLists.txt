@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.28)
 
 file(GLOB INPUTS ${CMAKE_CURRENT_SOURCE_DIR}/*.in)
 if (INPUTS)
-    MESSAGE(STATUS "Copying files... ${INPUTS}")
+    MESSAGE(STATUS "Day 05: Copying files... ${INPUTS}")
     file(COPY ${INPUTS}
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 else()
-    MESSAGE(STATUS "Inputs empty... ignoring")
+    MESSAGE(STATUS "Day 05: Inputs empty... ignoring")
 endif()
 add_executable(day5_task1 task1.cpp)
 set_target_properties(day5_task1 PROPERTIES OUTPUT_NAME t1.elf)

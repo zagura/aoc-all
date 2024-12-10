@@ -58,7 +58,6 @@ bool valid_update(const std::vector<int>& update, std::vector<std::pair<int, int
 
 void fix_update(std::vector<int>& update, const std::vector<std::pair<int, int>>& rules, size_t limit) {
     for (size_t i = 0; i < limit; i++) {
-
         for (const auto& r: rules) {
             if (r.first == update[i]) {
                 // if (auto ref = std::find_if(update.begin(), update.end(), [&r](auto value) {
