@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     }
     std::vector<std::string> values {};
     for (std::string line; getline(input, line);) {
-        valuse.push_back(line);
+        values.push_back(line);
     }
     size_t total = 0;
     for (auto& n: values) {
