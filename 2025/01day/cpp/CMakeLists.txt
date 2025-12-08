@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 
-file(GLOB INPUTS ${CMAKE_CURRENT_SOURCE_DIR}/*.in)
-if (NOT ${INPUTS})
+file(GLOB INPUTS ${CMAKE_CURRENT_SOURCE_DIR}/../*.in)
+if (INPUTS)
     MESSAGE(STATUS "Copying files... ${INPUTS}")
     file(COPY ${INPUTS}
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
