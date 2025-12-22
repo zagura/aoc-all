@@ -1,28 +1,72 @@
 #!/usr/bin/python3
+
 import sys
 
-fname = 'input.in'
-if len(sys.argv) == 2:
+fname = "../input.in"
+if len(sys.argv) > 1:
     fname = sys.argv[1]
 
-with open(fname) as f:
-    line = f.readlines()[0].split(',')
+def task2(fname):
+    args = []
+    rows = []
+    with open(fname, 'r', encoding='utf-8') as f:
+        data = f.readlines()
+        for row in data[:-1]:
+            rows.append(row.strip().split())
+
+    for i in range(len(rows[0])):
+        col = [row[i] for row in rows]
+        lens = max([len(x) for x in col])
+        numbers = []
+        for d in list(range(lens))[::-1]:
+            n = 0
+            for c in col:
+                if len(c) > d:
+                    print(f"Add {c[d]} to existing {n}")
+                    n = n * 10 + int(c[d])
+            numbers.append(n)
+        print(f"Column {i}: {numbers}")
+        args.append(list(numbers))
 
 
-fishes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-for n in line:
-    fishes[int(n)] += 1
+    symbols = data[-1].strip().split()
+    total = get_total(args, symbols)
+    print(f"Total: {total}")
 
-for d in range(256):
-    zeros = fishes[0]
-    for i in range(0,9):
-        fishes[i] = fishes[i+1]
-    fishes[6] += zeros
-    fishes[8] += zeros
-    print(f"Day {d}: {fishes}")
+def task2_2(fname):
+    with open(fname, 'r', encoding='utf-8') as f:
+        data = f.readlines()
+        for d in data:
+            # Skip \n at the end
+            d = d[:-1]
+    lens = max([len(x) for x in data])
+    symbols = data[-1]
+    data = data[:-1]
+    args = []
+    numbers = []
+    for i in range(lens):
+        n = ""
+        for row in data:
+            n += row[i]
+        if n.strip() == "":
+            args.append(list(numbers))
+            numbers = []
+        else:
+            numbers.append(int(n))
+    total = get_total(args, symbols.split())
+    print(f"Task 2 total: {total}")
 
-total = 0
-for f in fishes:
-    total += f
-print(f"Total is {suma}")
+def get_total(args, symbols):
+    total = 0
+    for i in range(len(symbols)):
+        partial = 0
+        if symbols[i] == '+':
+            partial = sum(args[i])
+        elif symbols[i] == '*':
+            partial = 1
+            for a in args[i]:
+                partial *= a
+        total += partial
+    return total
 
+task2_2(fname)
