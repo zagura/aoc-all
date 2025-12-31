@@ -12,4 +12,5 @@ add_executable(day9_task1 task1.cpp)
 set_target_properties(day9_task1 PROPERTIES OUTPUT_NAME t1.elf)
 
 add_executable(day9_task2 task2.cpp)
+target_link_libraries(day9_task2 ncurses)
 set_target_properties(day9_task2 PROPERTIES OUTPUT_NAME t2.elf)
