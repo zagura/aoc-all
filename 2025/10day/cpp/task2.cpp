@@ -5,8 +5,8 @@
  *
  *    Description:  AoC 2025 - Day 10
  *
- *        Version:  1.0
- *        Created:  31.12.2025
+ *        Version:  1.1
+ *        Created:  04.01.2026
  *
  *         Author:  Michał Zagórski (zagura), <zagura6@gmail.com>
  *
@@ -143,9 +143,6 @@ int main(int argc, char* argv[]) {
         std::println("Count: {} after {} iterations", min_count, call_count);
     }
     std::println("Widest lights: {}", len);
-    // for (auto& n: values) {
-    //     total += n.size();
-    // }
     ::printf("Task 1 result: %" PRIu64 "\n", total);
     return 0;
 }
