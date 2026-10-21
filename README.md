@@ -13,18 +13,22 @@ This is collection of solutions in Advent of Code from different editions:
 * [Advent of Code 2021](https://adventofcode.com/2021) - [solutions](2021)
 * [Advent of Code 2022](https://adventofcode.com/2022) - [solutions](2022)
 * [Advent of Code 2023](https://adventofcode.com/2023) - [solutions](2023)
+* [Advent of Code 2024](https://adventofcode.com/2024) - [solutions](2024)
+* [Advent of Code 2025](https://adventofcode.com/2025) - [solutions](2025)
 
 ## Progress
 
 | Edition | Tasks  |
 |:--------|-------:|
-| 2015    |  0/50  |
+| 2015    | 12/50  |
 | 2016    |  0/50  |
 | 2017    |  5/50  |
-| 2018    | 16/25  |
-| 2019    | 12/50  |
+| 2018    | 32/50  |
+| 2019    | 30/50  |
 | 2020    | 50/50  |
 | 2021    | 43/50  |
 | 2022    | 30/50  |
 | 2023    | 22/50  |
-
+| 2024    | 27/50  |
+| 2025    | 19/24  |
+| 2026    |  0/0   |
