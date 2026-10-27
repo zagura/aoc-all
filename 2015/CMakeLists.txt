@@ -9,7 +9,7 @@ add_compile_options(-g -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-d
 
 foreach(DAY_NO RANGE 1 9)
     add_subdirectory("0${DAY_NO}day")
-endforeach()
+endforeach(DAY_NO)
 foreach(DAY_NO RANGE 10 25)
-    add_subdirectory("${DAY_NO}day/cpp" "{DAY_NO}day")
-endforeach(DAY)
+    add_subdirectory("${DAY_NO}day/cpp" "${DAY_NO}day")
+endforeach(DAY_NO)
