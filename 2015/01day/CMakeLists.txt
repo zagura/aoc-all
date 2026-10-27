@@ -1,5 +1,14 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.27)
+file(GLOB INPUTS ${CMAKE_CURRENT_SOURCE_DIR}/*.in)
+if (INPUTS)
+    MESSAGE(STATUS "Copying files... ${INPUTS}")
+    file(COPY ${INPUTS}
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+else()
+    MESSAGE(STATUS "Inputs empty... ignoring")
+endif()
+add_executable(day1_task1 task1.cpp)
+set_target_properties(day1_task1 PROPERTIES OUTPUT_NAME t1.elf)
 
-add_executable(01day_1.elf task1.cpp)
-add_executable(01day_2.elf task2.cpp)
-
+add_executable(day1_task2 task2.cpp)
+set_target_properties(day1_task2 PROPERTIES OUTPUT_NAME t2.elf)
